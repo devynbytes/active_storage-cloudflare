@@ -7,7 +7,6 @@ require "action_dispatch"
 require "action_dispatch/http/content_disposition"
 
 module ActiveStorage
-
   class Service::CloudflareImagesService < Service
     def initialize(**config)
       @config = config
@@ -91,6 +90,7 @@ module ActiveStorage
     end
 
     private
+
     def private_url(key, expires_in:, filename:, disposition:, content_type:, **)
       cloudflare_client.images.signed_url(key, key: @config.fetch("default_key"), expiry_seconds: expires_in)
     end
@@ -108,7 +108,8 @@ module ActiveStorage
         api_key: @config.fetch("api_key"),
         account_id: @config.fetch("account_id"),
         images_hash: @config.fetch("images_hash"),
-        adapter: @config.fetch("adapter"))
+        adapter: @config.fetch("adapter")
+      )
     end
   end
 end

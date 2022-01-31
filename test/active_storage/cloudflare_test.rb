@@ -7,7 +7,7 @@ class ActiveStorage::CloudflareTest < Minitest::Test
     refute_nil ::ActiveStorage::Cloudflare::VERSION
   end
 
-  def test_it_does_something_useful
-    assert false
-  end
+  # def test_it_does_something_useful
+  #   assert false
+  # end
 end
