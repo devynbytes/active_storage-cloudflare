@@ -1,8 +1,8 @@
 # ActiveStorage::Cloudflare
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/active_storage/cloudflare`. To experiment with that code, run `bin/console` for an interactive prompt.
+This gem adds the Cloudflare Images service as an ActiveStorage service. 
 
-TODO: Delete this and the text above, and describe your gem
+> Experimental at best. I'm not sure that active_storage is a good fit for the Cloudflare service. 
 
 ## Installation
 
@@ -20,9 +20,33 @@ Or install it yourself as:
 
     $ gem install active_storage-cloudflare
 
+## Setup 
+
+Add the `cloudflare_images` configuration in `config/storage.yml`
+
+```yaml
+cloudflare_images:
+  service: CloudflareImages
+  api_key: "cloudflare-api-key"            # The cloudflare api key (see api keys in images dashboard)
+  account_id: "cloudflare-account-id"      # The cloudflare images account id (found in images dashboard)
+  default_key: "cloudflare-default-key"    # Default key used for image signing (found in images dashboard) 
+  require_signed_urls: false
+  images_hash: "cloudflare-images-hash"    # The images hash used for the image delivery url (i.e. https://imagedelivery.net/<images-hash>/<image_id>/<variant_name>)
+  adapter: Faraday.default_adapter         # By default, uses the default adapter for Faraday, but you can replace it with this config value. 
+```
+
 ## Usage
 
-TODO: Write usage instructions here
+### For an image url: 
+
+```erb
+
+Original file URL:
+
+<%= image_tag @photo.image.url %>
+```
+
+
 
 ## Development
 

@@ -23,25 +23,32 @@ module ActiveStorage
     # Override in subclasses only if the service needs to store specific
     # metadata that has to be updated upon identification.
     def update_metadata(key, **metadata)
+      instrument :update_metadata, key: key do
+        cloudflare_client.images.update(file_id: key, **metadata)
+      end
     end
 
-    def download(key)
+    def download(key, &block)
       if block_given?
         instrument :streaming_download, key: key do
-          cloudflare_client.images.download(file_id: key)
+          stream(key, &block)
         end
       else
         instrument :download, key: key do
           cloudflare_client.images.download(file_id: key)
+        rescue CloudflareDev::FileNotFoundError
+          raise ActiveStorage::FileNotFoundError
         end
       end
     end
 
     def download_chunk(key, range)
-      raise NotImplementedError
-      # instrument :download_chunk, key: key, range: range do
-      #   cloudflare_client.images.download(file_id: key)
-      # end
+      instrument :download_chunk, key: key, range: range do
+        object = cloudflare_client.images.download(file_id: key)
+        object.get(range: "bytes=#{offset}-#{offset + chunk_size - 1}").force_encoding(Encoding::BINARY)
+      rescue CloudflareDev::FileNotFoundError
+        raise ActiveStorage::FileNotFoundError
+      end
     end
 
     # Concatenate multiple files into a single "composed" file.
@@ -58,9 +65,7 @@ module ActiveStorage
 
     # Delete files at keys starting with the +prefix+.
     def delete_prefixed(prefix)
-      instrument :delete_prefixed, key: prefix do
-        cloudflare_client.images.delete(file_id: prefix)
-      end
+      raise NotImplementedError
     end
 
     # Return +true+ if a file exists at the +key+.
@@ -100,7 +105,7 @@ module ActiveStorage
     end
 
     def custom_metadata_headers(metadata)
-      raise NotImplementedError
+      {}
     end
 
     def cloudflare_client
@@ -110,6 +115,25 @@ module ActiveStorage
         images_hash: @config.fetch("images_hash"),
         adapter: @config.fetch("adapter")
       )
+    end
+
+    # Reads the object for the given key in chunks, yielding each to the block.
+    # Modified form ActiveStorage::Service::S3Service
+    def stream(key)
+      object = cloudflare_client.images.download(file_id: key)
+
+      chunk_size = 5.megabytes
+      offset = 0
+
+      raise ActiveStorage::FileNotFoundError unless object.exists?
+
+      io = StringIO.new(object)
+
+      while offset < object.length
+        io.seek(offset)
+        yield io.read(chunk_size)
+        offset += chunk_size
+      end
     end
   end
 end
